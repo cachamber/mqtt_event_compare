@@ -38,7 +38,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
-        run: pytest -q
+        run: |
+          PYTHONPATH=mqtt_event_compare pytest -q mqtt_event_compare/tests
 
   publish:
     name: Build and publish Docker image to GHCR (multi-arch)
@@ -68,7 +69,7 @@ jobs:
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./mqtt_event_compare
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
