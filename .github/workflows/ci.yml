@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mqtt_event_compare
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
 
@@ -46,7 +46,7 @@ jobs:
     needs: test
     defaults:
       run:
-        working-directory: mqtt_event_compare
+        working-directory: .
     if: needs.test.result == 'success' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'))
     steps:
       - uses: actions/checkout@v4
