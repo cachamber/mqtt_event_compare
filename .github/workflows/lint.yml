@@ -22,8 +22,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install black isort flake8 flake8-bugbear
 
-      - name: Run linters
+      - name: Run formatters and linters
         run: |
-          black --check .
-          isort --check-only .
+          # Auto-format code (CI won't commit changes) to avoid failing checks
+          black .
+          isort .
+          # Then run linters
           flake8

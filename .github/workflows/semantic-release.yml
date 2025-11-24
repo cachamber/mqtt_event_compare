@@ -17,7 +17,11 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Install Node dev deps
+        run: |
+          npm ci --no-audit --no-fund
+
       - name: Run semantic-release
-        uses: amitsingh-007/semantic-release-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release --debug
