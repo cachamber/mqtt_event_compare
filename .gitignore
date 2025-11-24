@@ -75,3 +75,14 @@ docker-compose.override.yml
 *.pyo
 *.pyd
 *.swp
+
+# Node / npm
+node_modules/
+npm-debug.log*
+.npm
+.package-lock.json
+.nvmrc
+
+# Local npm cache
+.cache/
+

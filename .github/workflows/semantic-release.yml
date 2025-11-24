@@ -19,7 +19,9 @@ jobs:
 
       - name: Install Node dev deps
         run: |
-          npm ci --no-audit --no-fund
+          # `npm ci` requires a package-lock.json. Use `npm install` in CI
+          # to install devDependencies when a lockfile is not present.
+          npm install --no-audit --no-fund
 
       - name: Run semantic-release
         env:
