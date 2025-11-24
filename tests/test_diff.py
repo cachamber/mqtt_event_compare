@@ -1,5 +1,3 @@
-import pytest
-
 from mqtt_compare import diff_events
 
 

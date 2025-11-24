@@ -9,7 +9,6 @@ timestamps and the differences between events.
 import argparse
 import json
 import sys
-import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
@@ -58,7 +57,7 @@ def extract_timestamp(payload: Any) -> datetime:
                 except Exception:
                     pass
         # no obvious timestamp field, try top-level numeric fields
-        for k, v in payload.items():
+        for _k, v in payload.items():
             if isinstance(v, (int, float)) and v > 1_000_000_000:
                 try:
                     return parse_timestamp_from_value(v)
@@ -84,25 +83,26 @@ def diff_events(a: Any, b: Any, path: str = "") -> Dict[str, List[Tuple[str, Any
     """Return differences between a and b.
 
     Result keys: added (in b), removed (from a), changed (value changed).
-    Each list holds tuples (path, value) for added/removed and (path, (old, new)) for changed.
-    Paths are dotted for nested dicts and index-based for lists.
+    Each list holds tuples (path, value) for added/removed and
+    (path, (old, new)) for changed. Paths are dotted for nested dicts
+    and index-based for lists.
     """
     added = []
     removed = []
     changed = []
 
-    def _path(p, k):
-        return f"{p}.{k}" if p else str(k)
+    def _path(p, key_name):
+        return f"{p}.{key_name}" if p else str(key_name)
 
     if isinstance(a, dict) and isinstance(b, dict):
         keys = set(a.keys()) | set(b.keys())
-        for k in sorted(keys):
-            pa = a.get(k, None)
-            pb = b.get(k, None)
-            p = _path(path, k)
-            if k not in a:
+        for key_name in sorted(keys):
+            pa = a.get(key_name, None)
+            pb = b.get(key_name, None)
+            p = _path(path, key_name)
+            if key_name not in a:
                 added.append((p, pb))
-            elif k not in b:
+            elif key_name not in b:
                 removed.append((p, pa))
             else:
                 if isinstance(pa, (dict, list)) and isinstance(pb, type(pa)):
@@ -186,7 +186,7 @@ class MQTTComparator:
             self.write_line(f"Connected to MQTT broker (rc={rc})")
             topic = self.cfg.get("topic")
             qos = int(self.cfg.get("qos", 0))
-            self.write_line(f"Subscribing to topic: {topic} (qos={qos})")
+            self.write_line("Subscribing to topic:", topic, f"(qos={qos})")
             client.subscribe(topic, qos=qos)
         else:
             self.write_line(f"Failed to connect, rc={rc}")
@@ -207,15 +207,15 @@ class MQTTComparator:
 
         ts = extract_timestamp(parsed if parsed is not None else payload)
         if self.last_event is None:
-            self.write_line(f"First event received: {ts.isoformat()}")
+            self.write_line("First event received:", ts.isoformat())
             self.last_event = payload
             self.last_payload = payload_raw
             self.last_ts = ts
             return
 
         self.write_line("---")
-        self.write_line(f"Previous event timestamp: {self.last_ts.isoformat()}")
-        self.write_line(f"Current event timestamp:  {ts.isoformat()}")
+        self.write_line("Previous event timestamp:", self.last_ts.isoformat())
+        self.write_line("Current event timestamp:", ts.isoformat())
 
         diff = diff_events(self.last_event, payload)
 
@@ -225,15 +225,15 @@ class MQTTComparator:
             if diff["added"]:
                 self.write_line("Added:")
                 for p, v in diff["added"]:
-                    self.write_line(f"  + {p}: {v}")
+                    self.write_line("  +", f"{p}:", v)
             if diff["removed"]:
                 self.write_line("Removed:")
                 for p, v in diff["removed"]:
-                    self.write_line(f"  - {p}: {v}")
+                    self.write_line("  -", f"{p}:", v)
             if diff["changed"]:
                 self.write_line("Changed:")
                 for p, (old, new) in diff["changed"]:
-                    self.write_line(f"  * {p}: {old} -> {new}")
+                    self.write_line("  *", f"{p}:", f"{old} -> {new}")
 
         # update last
         self.last_event = payload
@@ -246,7 +246,7 @@ class MQTTComparator:
         keepalive = int(self.cfg.get("keepalive", 60))
         if self.cfg.get("tls"):
             self.client.tls_set()
-        self.write_line(f"Connecting to {host}:{port} (keepalive={keepalive})")
+        self.write_line("Connecting to", f"{host}:{port}", f"(keepalive={keepalive})")
         self.client.connect(host, port, keepalive)
         try:
             self.client.loop_forever()
@@ -267,9 +267,23 @@ def load_config(path: str) -> Dict[str, Any]:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="MQTT event comparator")
-    p.add_argument("--config", "-c", default="config.json", help="Path to JSON config file")
-    p.add_argument("--output", "-o", help="Optional path to write output (overrides config output_file)")
-    p.add_argument("--debug", "-d", action="store_true", help="Enable debug output")
+    p.add_argument(
+        "--config",
+        "-c",
+        default="config.json",
+        help="Path to JSON config file",
+    )
+    p.add_argument(
+        "--output",
+        "-o",
+        help=("Optional path to write output (overrides config output_file)"),
+    )
+    p.add_argument(
+        "--debug",
+        "-d",
+        action="store_true",
+        help="Enable debug output",
+    )
     args = p.parse_args(argv)
 
     try:

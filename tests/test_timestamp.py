@@ -1,8 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-import pytest
-
-from mqtt_compare import parse_timestamp_from_value, extract_timestamp
+from mqtt_compare import extract_timestamp, parse_timestamp_from_value
 
 
 def test_parse_numeric_seconds():
