@@ -16,10 +16,21 @@ import paho.mqtt.client as mqtt
 
 
 def now_iso() -> str:
+    """Return current UTC time as an ISO 8601 formatted string.
+
+    Useful for producing timestamps when none are available in incoming
+    messages.
+    """
     return datetime.now(timezone.utc).isoformat()
 
 
 def parse_timestamp_from_value(v: Any) -> datetime:
+    """Parse a timestamp value into a timezone-aware UTC datetime.
+
+    Supports numeric epoch timestamps (seconds or milliseconds) and
+    ISO-8601 formatted strings. Raises ValueError for unsupported types
+    or unparsable values.
+    """
     # v may be numeric epoch (seconds or ms) or an ISO string
     if v is None:
         raise ValueError("no timestamp")
@@ -48,6 +59,14 @@ def parse_timestamp_from_value(v: Any) -> datetime:
 
 
 def extract_timestamp(payload: Any) -> datetime:
+    """Extract a timestamp datetime from a message payload.
+
+    Attempts to find common timestamp fields when the payload is a
+    mapping (e.g. JSON object) — `timestamp`, `time`, `ts`, `t` — or to
+    interpret top-level numeric values as epoch seconds/milliseconds.
+    If the payload is a string/bytes that looks like a timestamp it will
+    be parsed. Falls back to the current arrival time.
+    """
     # payload may be dict (parsed JSON), bytes, or plain string
     if isinstance(payload, dict):
         for key in ("timestamp", "time", "ts", "t"):
@@ -141,6 +160,14 @@ def diff_events(a: Any, b: Any, path: str = "") -> Dict[str, List[Tuple[str, Any
 
 
 class MQTTComparator:
+    """Subscribe to an MQTT topic and compare consecutive events.
+
+    The `cfg` dict may include keys: `host`, `port`, `topic`, `qos`,
+    `keepalive`, `client_id`, `username`, `password`, `tls`, and
+    `output_file`. When an `output_file` is provided, comparison output
+    is also appended to that file.
+    """
+
     def __init__(self, cfg: Dict[str, Any], debug: bool = False):
         self.cfg = cfg
         self.debug = debug
@@ -162,10 +189,17 @@ class MQTTComparator:
                 print(f"Failed to open output file '{self.output_file}': {e}")
 
     def log(self, *args, **kwargs):
+        """Print debug messages when `debug` is enabled."""
         if self.debug:
             print(*args, **kwargs)
 
     def write_line(self, *args, **kwargs):
+        """Write a line to stdout and also to the configured output file.
+
+        Accepts the same arguments as `print()` (supports `sep` and
+        `end` via kwargs). The output is flushed to both stdout and
+        the file (if configured).
+        """
         # Write a line to stdout and optionally to output file.
         sep = kwargs.pop("sep", " ")
         end = kwargs.pop("end", "\n")
@@ -182,6 +216,11 @@ class MQTTComparator:
                 pass
 
     def on_connect(self, client, userdata, flags, rc, *args, **kwargs):
+        """MQTT on_connect callback.
+
+        Subscribes to the configured topic when a connection is
+        established. Compatible with paho-mqtt callback variants.
+        """
         if rc == 0:
             self.write_line(f"Connected to MQTT broker (rc={rc})")
             topic = self.cfg.get("topic")
@@ -192,6 +231,12 @@ class MQTTComparator:
             self.write_line(f"Failed to connect, rc={rc}")
 
     def on_message(self, client, userdata, msg, *args, **kwargs):
+        """MQTT on_message callback.
+
+        Parses the message payload (attempting JSON decoding), extracts a
+        timestamp (or uses arrival time), compares the message with the
+        previous one, and prints a summary of differences.
+        """
         payload_raw = msg.payload
         payload = None
         parsed = None
@@ -241,6 +286,11 @@ class MQTTComparator:
         self.last_ts = ts
 
     def run(self):
+        """Connect to the MQTT broker and start the client loop.
+
+        This method blocks until interrupted (KeyboardInterrupt) or the
+        client stops. On shutdown, the optional output file is closed.
+        """
         host = self.cfg.get("host", "localhost")
         port = int(self.cfg.get("port", 1883))
         keepalive = int(self.cfg.get("keepalive", 60))
