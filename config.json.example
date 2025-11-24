@@ -1,0 +1,16 @@
+{
+  "host": "localhost",
+  "port": 1883,
+  "topic": "sensors/+/events",
+  "qos": 0,
+  "keepalive": 60,
+  "client_id": "mqtt-event-compare",
+  "username": "",
+  "password": "",
+  "tls": false
+}
+
+# Notes:
+# - Set `topic` to the topic you want to subscribe to.
+# - `username`/`password` are optional.
+# - Save as `config.json` or pass a different path with `--config`.
