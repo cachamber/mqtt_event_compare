@@ -69,6 +69,7 @@ config.json
 
 # Docker
 docker-compose.override.yml
+docker-compose.yml
 
 # Other
 *.pyc

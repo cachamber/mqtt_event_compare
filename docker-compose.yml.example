@@ -1,0 +1,36 @@
+version: '3.8'
+
+# Example docker-compose file for running the mqtt_event_compare service
+# - shows both `build` and `image` options for the comparator service
+
+services:
+  mqtt-event-compare:
+    # Option A: build the container from the local Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    # Option B: use the pre-built image from GHCR (uncomment to use)
+    # image: ghcr.io/cachamber/mqtt_event_compare:latest
+
+    container_name: mqtt-event-compare
+    restart: unless-stopped
+    depends_on:
+      - mqtt-broker
+    # Mount your config.json so the container picks up broker+topic settings
+    volumes:
+      - ./config.json:/app/config.json:ro
+      # optional: persist comparator output
+      - ./events.log:/app/events.log
+    # If you used the Dockerfile, ensure CMD uses /app/config.json or pass args
+    # Example environment variables (not used by the script by default):
+    environment:
+      - TZ=UTC
+    # For local debugging you may want to connect the container to the host network
+    # network_mode: "host"
+
+# Usage:
+# 1) Build and run locally (uses `build` if uncommented):
+#    docker compose -f docker-compose.yml.example up --build
+# 2) Use published image (uncomment `image:` and run):
+#    docker compose -f docker-compose.yml.example up
